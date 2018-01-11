@@ -1,10 +1,11 @@
+# criando o projeto
 django-admin.py startproject aula
 cd aula/
 
-#Rodando o servidor
+# Rodando o servidor
 python manage.py runserver
 
-#Configurando o projeto
+# Configurando o projeto
 
 DATABASES = {
     'default': {
