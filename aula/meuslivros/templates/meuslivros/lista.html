@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1>Coleções</h1>
+{% for i in lista %}
+    {{i.nome}}
+    <h2>Livros</h2>
+    {% for j in i.livro_set.all %}
+        {{j.nome}}<br>
+    {% endfor %}
+{% endfor %}
+
+</body>
+</html>

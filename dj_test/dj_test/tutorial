@@ -1,0 +1,340 @@
+#Instalando django
+sudo pip install django
+
+#Criando Projeto
+django-admin startproject mysite
+
+#Criando a app
+python manage.py startapp core
+registrar a app
+settings.py
+INSTALLED_APPS = [
+add core
+]
+
+#Cria o bd
+python manage.py migrate
+
+#Criar usuário
+python manage.py createsuperuser
+
+#criando Hello world
+urls.py urlpatterns = [
+    url(r'^', include('newapp.urls')),
+]
+
+#O servidor de desenvolvimento
+python manage.py runserver
+
+#CRUD
+mysite\urls
+from django.conf.urls import url, include
+from django.contrib import admin
+urlpatterns = [
+    url(r'^admin/', admin.site.urls),
+    url(r'^', include('core.urls')),
+]
+##core/urls
+from django.conf.urls import url
+from core.views import home
+urlpatterns = [
+    url(r'^', home),
+]
+
+##core/views
+from django.shortcuts import render
+def home (request):
+    return render(request, 'core/index.html')
+
+##templates
+templates/core/index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+</head>
+<body>
+    <h2>Hello World</h2>
+</body>
+</html>
+
+###inviar uma variável
+altera os arquivos view e index
+
+# -*- coding: utf-8 -*-
+from django.shortcuts import render
+
+# Create your views here.
+def home (request):
+    var ='mundo'
+    return render(request, 'core/index.html', {'var': var})
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+</head>
+<body>
+    <h1>Hello World </h1>
+    <h2>{{var}} </h2>
+</body>
+</html>
+
+#Criando um blog
+
+##mysite/urls
+from django.conf.urls import url, include
+from django.contrib import admin
+from core.views import home, lista
+
+urlpatterns = [
+    url(r'^admin/', admin.site.urls),
+    url(r'^', include('core.urls')),
+    url(r'^', 'lista-todos/$', lista),
+]
+
+##views
+# -*- coding: utf-8 -*-
+from django.shortcuts import render
+from core.models import Post
+
+# Create your views here.
+def home (request):
+    var ='mundo'
+    return render(request, 'core/index.html', {'var': var})
+
+def lista(request):
+    lista = Post.objects.all().order_by('-id')
+    return render(request, 'newapp/lista.html', {'lista_posts': lista})
+
+##models
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from django.db import models
+
+# Create your models here.
+
+class Post(models.Model):
+    titulo=models.CharField(max_length=100)
+    texto = models.TextField()
+
+    def __str__(self):
+        return self.titulo
+
+##admin
+registrar
+
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from django.contrib import admin
+from core.models import Post
+
+# Register your models here.
+admin.site.register(Post)
+
+alterar o bd
+python manage.py makemigrations
+python manage.py migrate
+
+#Novo Post
+
+newapp\url
+
+from django.conf.urls import url
+from newapp.views import home, lista, novo
+
+urlpatterns = [
+    url(r'^$', home),
+    url(r'^lista-todos/$', lista),
+    url(r'^novo/$', novo),
+]
+
+view
+
+from django.shortcuts import render, redirect
+from newapp.models import Post
+from newapp.forms import PostForm
+
+# Create your views here.
+def home (request):
+    var = 'testando a variável'
+    return render(request,'newapp/index.html', {'var' : var})
+
+#criando lista
+def lista (request):
+    lista = Post.objects.all().order_by('-id')
+    return render(request,'newapp/lista.html', {'lista_posts' : lista})
+
+def novo(request):
+    form = PostForm(request.POST or None)
+
+    if request.method == 'POST':
+        if form.is_valid():
+            form.save()
+            return redirect(lista)
+
+    return render(request, 'newapp/novo.html', {'form': form})
+
+forms
+
+from django.forms import ModelForm
+from newapp.models import Post
+
+class PostForm(ModelForm):
+    class Meta:
+        model = Post
+        fields = ['titulo', 'texto']
+
+novo.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Novo</title>
+</head>
+<body>
+    <form method="POST">
+        {% csrf_token %}
+        {{form}}
+        <button type="submit">Salvar</button>
+
+    </form>
+</body>
+</html>
+
+testando no navegador
+
+#atualizar o post
+
+urls.py
+
+from django.conf.urls import url
+from newapp.views import home, lista, novo, atualiza
+
+urlpatterns = [
+    url(r'^$', home),
+    url(r'^lista-todos/$', lista),
+    url(r'^novo/$', novo),
+    url(r'^atualizar/(?P<id>\d+)/$', atualiza, name='atualizar'),
+]
+
+views
+
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from django.shortcuts import render, redirect
+from newapp.models import Post
+from newapp.forms import PostForm
+
+# Create your views here.
+def home (request):
+    var = 'testando a variável'
+    return render(request,'newapp/index.html', {'var' : var})
+
+#criando lista
+def lista (request):
+    lista = Post.objects.all().order_by('-id')
+    return render(request,'newapp/lista.html', {'lista_posts' : lista})
+
+def novo(request):
+    form = PostForm(request.POST or None)
+
+    if request.method == 'POST':
+        if form.is_valid():
+            form.save()
+            return redirect(lista)
+
+    return render(request, 'newapp/novo.html', {'form': form})
+
+
+def atualiza(request, id):
+    post = Post.objects.get(id=id)
+    form = PostForm(request.POST or None, instance=post)
+
+    if form.is_valid():
+        form.save()
+        return redirect(lista)
+
+    return render(request, 'newapp/novo.html', {'form': form})
+
+
+lista.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Post</title>
+</head>
+<body>
+    <h1> Lista de Post</h1>
+    {% for post in lista_posts %}
+    <article>
+        <h2>{{post.titulo}}</h2>
+        {{post.texto}}
+
+        <br>
+        <a href="{% url 'atualizar' post.id %}">Atualizar</a>
+    </article>
+    {% endfor %}
+</body>
+</html>
+
+#deletar
+
+newapp/urls.py
+
+from django.conf.urls import url
+from newapp.views import home, lista, novo, atualiza, deletar
+
+urlpatterns = [
+    url(r'^$', home),
+    url(r'^lista-todos/$', lista),
+    url(r'^novo/$', novo),
+    url(r'^atualizar/(?P<id>\d+)/$', atualiza, name='atualizar'),
+    url(r'^deletar/(?P<id>\d+)/$', deletar, name='deletar'),
+]
+
+views
+
+def deletar(request, id):
+    post = Post.objects.get(id=id)
+    post.delete()
+    return redirect(lista)
+
+lista
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Post</title>
+</head>
+<body>
+    <h1> Lista de Post</h1>
+    {% for post in lista_posts %}
+    <article>
+        <h2>{{post.titulo}}</h2>
+        {{post.texto}}
+
+        <br>
+        <a href="{% url 'atualizar' post.id %}">Atualizar</a>
+        <a href="{% url 'deletar' post.id %}" >Deletar</a>
+    </article>
+    {% endfor %}
+</body>
+</html>
+
+
+#css com bootstrap
+
+https://www.bootstrapcdn.com/
+
+
+

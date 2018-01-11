@@ -1,0 +1,171 @@
+http://www.devwikiblog.com/posts/2/django-como-criar-um-sistema-web-completo
+
+#criando projeto
+django-admin startproject django_init
+
+#Versionamento do banco de dados
+django_init/settings.py
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'djangoInit',
+        'USER': 'root',
+        'PASSWORD': 'jc1122',
+        'HOST': 'localhost',
+        'PORT': ''
+    }
+}
+
+#Agora instalaremos a lib que possibilitará a conexão:
+pip install mysqlclient
+
+#criando o BD
+mysql -u root -p
+jc1122
+mysql> create database djangoInit;
+mysql>exit
+
+python manage.py migrate
+
+#Rodando o projeto
+python manage.py runserver
+
+#criando o super usuário
+python manage.py createsuperuser
+jczars
+d4jp1o9s4
+
+#Criando apps
+python manage.py startapp supplier
+
+#criando models
+supplier/models.py
+
+class Supplier(models.Model):
+    name = models.CharField(max_length=50, blank=False)
+    phone = models.CharField(max_length=20, blank=True)
+    email = models.CharField(max_length=100, blank=True)
+
+    def __str__(self):
+        return self.name
+
+#adicionar a appsettings.py
+INSTALLED_APPS = [
+    'supplier',
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+]
+
+#Criando versão do banco de dados para nossa app
+python manage.py makemigrations
+python manage.py migrate
+
+#Adicionando apps no Admin
+supplier/admin.py
+
+from django.contrib import admin
+from .models import Supplier
+
+# Register your models here.
+admin.site.register(Supplier)
+
+#Modificando uma app
+acrescentar um novo campo
+address = models.CharField(max_length=150, blank=True)
+
+rodar o versionamento do bd
+
+#utilizando view
+
+list.html
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+       <title>Django Init</title>
+    </head>
+    <body>
+       <p>Fornecedores cadastrados</p>
+       <ul>
+          {% for item in supplier_list %}
+             <li>
+                <b>Nome:</b> {{ item.name }} - <b>Telefone:</b> {{ item.phone }}
+             </li>
+          {% endfor %}
+       </ul>
+    </body>
+</html>
+
+views.py
+
+from django.shortcuts import render
+from .models import Supplier
+
+
+def supplier_list(request):
+    suppliers = Supplier.objects.all()
+    context = {
+       'supplier_list': suppliers
+    }
+    return render(request, 'supplier/list.html', context)
+
+
+ --help
+ suppliers = Supplier.objects.all()
+
+Ela é equivalente a seguinte query:
+SELECT * FROM `supplier`;
+
+criar o arquivo supplier/urls.py
+
+from django.conf.urls import url
+from . import views
+
+urlpatterns = [
+    url(r'^$', views.supplier_list, name='list'),
+]
+
+#incluir as URLs de nossa app no projeto principal,
+django_init/urls.py
+
+url(r'^fornecedores/', include('supplier.urls')),
+
+#Filtrando dados com o ORM do Django
+Suponhamos que nosso sistema deva mostrar apenas fornecedores que possuam telefone. Moleza! No arquivo supplier/view.py trocaremos nossa query atual pela seguinte:
+
+suppliers = Supplier.objects.exclude(phone__isnull=True).exclude(phone__exact='')
+
+#Testes automatizados
+
+Fixtures
+Crie a pasta fixtures na raiz da pasta da app, ficando supplier/fixtures.
+python manage.py dumpdata supplier >> supplier/fixtures/supplier.json
+
+Este comando irá fazer um dump da app supplier em um arquivo JSON chamado supplier.json
+
+Vamos ao teste, edite o arquivo supplier/test.py
+
+from django.test import TestCase
+from django.test.client import Client
+
+from supplier.models import Supplier
+
+
+class SupplierTestCase(TestCase):
+    fixtures = ['supplier.json']
+
+    def setUp(self):
+       self.client = Client()
+
+    def test_list_supplier_no_phone(self):
+       expected = Supplier.objects.exclude(phone__isnull=True).exclude(phone__exact='')
+
+       response = self.client.get('/fornecedores/')
+       self.failUnlessEqual(response.status_code, 200)
+       self.failUnlessEqual(len(response.context['supplier_list']), len(expected))
+
+python manage.py test
