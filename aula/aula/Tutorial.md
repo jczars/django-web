@@ -5,7 +5,7 @@ cd aula/
 # Rodando o servidor
 python manage.py runserver
 
-# Configurando o projeto
+## Configurando o projeto
 
 DATABASES = {
     'default': {
